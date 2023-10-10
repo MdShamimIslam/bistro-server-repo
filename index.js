@@ -4,6 +4,8 @@ const port = process.env.PORT || 5000;
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.PAYMENT_TOKEN);
+console.log(stripe);
 
 app.use(cors());
 app.use(express.json());
@@ -94,6 +96,12 @@ async function run() {
       res.send(result);
     })
 
+    app.delete('/users/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    })
 
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -166,6 +174,21 @@ async function run() {
       res.send(result);
     });
     // carts collection end
+
+    // payment
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = price*100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        automatic_payment_methods:['card']
+      });
+    
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
