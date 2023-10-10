@@ -3,9 +3,10 @@ const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
 require("dotenv").config();
-const stripe = require("stripe")(process.env.PAYMENT_TOKEN);
-console.log(stripe);
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -176,19 +177,35 @@ async function run() {
     // carts collection end
 
     // payment
-    app.post("/create-payment-intent", async (req, res) => {
-      const { price } = req.body;
-      const amount = price*100;
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: "usd",
-        automatic_payment_methods:['card']
-      });
+    // app.post('/create-payment-intent',verifyJWT, async (req, res) => {
+    //   const { price } = req.body;
+    //   const amount = price*100;
+      
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: amount,
+    //     currency: "usd",
+    //     automatic_payment_methods:['card'],
+    //   });
+      
+    //   console.log("payment intent---",paymentIntent);
     
-      res.send({
-        clientSecret: paymentIntent.client_secret,
+    //   res.send({
+    //     clientSecret: paymentIntent.client_secret,
+    //   });
+    // });
+
+    app.post('/create-payment-intent', async (req,res)=>{
+      const {price} = req.body;
+      const amount = price*100 ;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount:amount,
+        currency:'usd',
+        payment_method_types:['card']
       });
-    });
+      res.send({
+        clientSecret : paymentIntent.client_secret
+      })
+    })
 
     await client.db("admin").command({ ping: 1 });
     console.log(
