@@ -6,6 +6,8 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
+// {maxNetworkRetries: 5}
+
 app.use(cors());
 app.use(express.json());
 
@@ -139,7 +141,7 @@ async function run() {
     // menu collection end
 
     // reviews collection start
-    app.get("reviews", async (req, res) => {
+    app.get("/reviews", async (req, res) => {
       const result = await reviewsCollection.find().toArray();
       res.send(result);
     });
@@ -180,15 +182,15 @@ async function run() {
     // create payment intent start
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
-        const amount = parseInt(price * 100);
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount,
-          currency: "usd",
-          payment_method_types: ["card"],
-        });
-        res.send({
-          clientSecret: paymentIntent.client_secret,
-        });
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
     });
     // create payment intent end
 
